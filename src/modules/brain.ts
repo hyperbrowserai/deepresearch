@@ -1,5 +1,6 @@
 import { OpenAI } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
+import { Usage } from "../types";
 
 import {
   DocumentSummary,
@@ -8,6 +9,7 @@ import {
   ResearchQuery,
   ResearchReport,
 } from "../types";
+import { usageTracker } from "../utils";
 
 export class BrainModule {
   constructor(private openai: OpenAI) {}
@@ -38,6 +40,18 @@ export class BrainModule {
         ResearchOutlineSchema,
         "ResearchOutline"
       ),
+    });
+
+    usageTracker.trackUsage({
+      model: "o1",
+      tokens: {
+        prompt_tokens: response.usage?.prompt_tokens || 0,
+        completion_tokens: response.usage?.completion_tokens || 0,
+        total_tokens: response.usage?.total_tokens || 0,
+      },
+      module: "brain",
+      operation: "generateOutline",
+      timestamp: new Date(),
     });
 
     const parsed = response.choices[0].message.parsed;
@@ -73,6 +87,18 @@ export class BrainModule {
       ],
     });
 
+    usageTracker.trackUsage({
+      model: "o3-mini",
+      tokens: {
+        prompt_tokens: response.usage?.prompt_tokens || 0,
+        completion_tokens: response.usage?.completion_tokens || 0,
+        total_tokens: response.usage?.total_tokens || 0,
+      },
+      module: "brain",
+      operation: "generateSectionContent",
+      timestamp: new Date(),
+    });
+
     return response.choices[0].message.content ?? "";
   }
 
@@ -99,6 +125,18 @@ export class BrainModule {
       ],
     });
 
+    usageTracker.trackUsage({
+      model: "o3-mini",
+      tokens: {
+        prompt_tokens: response.usage?.prompt_tokens || 0,
+        completion_tokens: response.usage?.completion_tokens || 0,
+        total_tokens: response.usage?.total_tokens || 0,
+      },
+      module: "brain",
+      operation: "generateIntroduction",
+      timestamp: new Date(),
+    });
+
     return response.choices[0].message.content ?? "";
   }
 
@@ -123,6 +161,18 @@ export class BrainModule {
           Write a conclusion that synthesizes the key findings and insights.`,
         },
       ],
+    });
+
+    usageTracker.trackUsage({
+      model: "o3-mini",
+      tokens: {
+        prompt_tokens: response.usage?.prompt_tokens || 0,
+        completion_tokens: response.usage?.completion_tokens || 0,
+        total_tokens: response.usage?.total_tokens || 0,
+      },
+      module: "brain",
+      operation: "generateConclusion",
+      timestamp: new Date(),
     });
 
     return response.choices[0].message.content ?? "";

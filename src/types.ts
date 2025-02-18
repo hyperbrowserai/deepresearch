@@ -83,6 +83,7 @@ export interface ResearchReport {
     generatedAt: Date;
     sourcesUsed: DocumentSummary[];
     searchQueries: string[];
+    usageMetrics?: ResearchMetrics;
   };
 }
 
@@ -109,4 +110,24 @@ export interface ModelConfig {
   reasoningModel: string; // o1 for main reasoning
   draftingModel: string; // o1 for section drafting
   finalModel: string; // o1 for final compilation
+}
+
+export interface TokenCount {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+}
+
+export interface Usage {
+  model: "gpt-4o" | "o1" | "o3-mini" | "gpt-4o-mini";
+  tokens: TokenCount;
+  module: string;
+  operation: string;
+  timestamp: Date;
+}
+
+export interface ResearchMetrics {
+  usages: Usage[];
+  totalTokens: number;
+  costEstimate: number;
 }
