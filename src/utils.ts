@@ -1,7 +1,7 @@
 import { createInterface } from "readline";
 import { Usage, TokenCount } from "./types";
 
-// Ask each clarifying question and get user input
+// Create a single readline interface that can be reused and closed
 const readline = createInterface({
   input: process.stdin,
   output: process.stdout,
@@ -13,6 +13,11 @@ export const askQuestion = (question: string): Promise<string> => {
       resolve(answer);
     });
   });
+};
+
+// Add function to close readline interface
+export const closeReadline = () => {
+  readline.close();
 };
 
 class UsageTracker {

@@ -1,6 +1,7 @@
 import { config } from "dotenv";
 import { openai, hbClient } from "./client";
 import { ResearchOrchestrator } from "./orchestrator";
+import { closeReadline } from "./utils";
 
 config();
 
@@ -36,9 +37,16 @@ async function main() {
     console.log("\nMetadata:");
     console.log("Generated at:", report.metadata.generatedAt);
     console.log("Number of sources used:", report.metadata.sourcesUsed.length);
+    console.log(
+      "Usage Metrics:",
+      JSON.stringify(report.metadata.usageMetrics, null, 2)
+    );
   } catch (error) {
     console.error("Error in research process:", error);
     process.exit(1);
+  } finally {
+    // Close the readline interface
+    closeReadline();
   }
 }
 
