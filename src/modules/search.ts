@@ -8,7 +8,9 @@ import {
   SearchResultsSchema,
   SearchResults,
   SearchQueriesSchema,
+  Usage,
 } from "../types";
+import { usageTracker } from "../utils";
 
 export class SearchModule {
   constructor(
@@ -38,11 +40,17 @@ export class SearchModule {
       response_format: zodResponseFormat(SearchQueriesSchema, "SearchQueries"),
     });
 
-    console.log(
-      `Spent ${JSON.stringify(
-        response.usage
-      )} o3-mini (high) tokens on generating search queries.`
-    );
+    usageTracker.trackUsage({
+      model: "o3-mini",
+      tokens: {
+        prompt_tokens: response.usage?.prompt_tokens || 0,
+        completion_tokens: response.usage?.completion_tokens || 0,
+        total_tokens: response.usage?.total_tokens || 0,
+      },
+      module: "search",
+      operation: "generateSearchQueries",
+      timestamp: new Date(),
+    });
 
     const queries = response.choices[0].message.parsed?.queries;
     if (!queries) {

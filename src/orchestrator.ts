@@ -5,6 +5,7 @@ import { SearchModule } from "./modules/search";
 import { SummarizationModule } from "./modules/summarization";
 import { BrainModule } from "./modules/brain";
 import { ResearchQuery, ResearchReport, ResearchState } from "./types";
+import { usageTracker } from "./utils";
 
 export class ResearchOrchestrator {
   private clarificationModule: ClarificationModule;
@@ -44,6 +45,9 @@ export class ResearchOrchestrator {
 
   async conductResearch(initialTopic: string): Promise<ResearchReport> {
     try {
+      // Reset usage tracking for new research
+      usageTracker.reset();
+
       // Initialize state with required fields
       this.state = {
         query: {
@@ -101,6 +105,12 @@ export class ResearchOrchestrator {
         refinedQuery,
         documentSummaries
       );
+
+      // Add usage metrics to the report
+      const metrics = usageTracker.getMetrics();
+      report.metadata.usageMetrics = metrics;
+
+      console.log(JSON.stringify(metrics, null, 2));
 
       this.saveState({ stage: "final" });
       return report;

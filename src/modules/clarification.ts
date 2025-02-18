@@ -5,7 +5,7 @@ import {
   ClarifyingQuestionsSchema,
 } from "../types";
 import { zodResponseFormat } from "openai/helpers/zod";
-import { askQuestion } from "../utils";
+import { askQuestion, usageTracker } from "../utils";
 
 export class ClarificationModule {
   constructor(private openai: OpenAI) {}
@@ -30,18 +30,22 @@ export class ClarificationModule {
       ),
     });
 
-    console.log(
-      `Spent ${JSON.stringify(
-        response.usage
-      )} GPT-4o tokens on clarifying questions.`
-    );
+    usageTracker.trackUsage({
+      model: "gpt-4o",
+      tokens: {
+        prompt_tokens: response.usage?.prompt_tokens || 0,
+        completion_tokens: response.usage?.completion_tokens || 0,
+        total_tokens: response.usage?.total_tokens || 0,
+      },
+      module: "clarification",
+      operation: "getClarifyingQuestions",
+      timestamp: new Date(),
+    });
 
     const questions = response.choices[0].message.parsed?.questions;
-
     if (!questions) {
       throw new Error("No questions generated");
     }
-
     return questions;
   }
 
@@ -66,11 +70,17 @@ export class ClarificationModule {
       response_format: zodResponseFormat(ResearchQuerySchema, "ResearchQuery"),
     });
 
-    console.log(
-      `Spent ${JSON.stringify(
-        response.usage
-      )} o3-mini tokens on processing answer.`
-    );
+    usageTracker.trackUsage({
+      model: "o3-mini",
+      tokens: {
+        prompt_tokens: response.usage?.prompt_tokens || 0,
+        completion_tokens: response.usage?.completion_tokens || 0,
+        total_tokens: response.usage?.total_tokens || 0,
+      },
+      module: "clarification",
+      operation: "processAnswer",
+      timestamp: new Date(),
+    });
 
     const parsed = response.choices[0].message.parsed;
     if (!parsed) {
@@ -78,7 +88,6 @@ export class ClarificationModule {
         "No parsed response in `ClarificationModule.processAnswer`"
       );
     }
-
     return parsed;
   }
 

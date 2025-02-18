@@ -3,8 +3,10 @@ import {
   DocumentSummary,
   DocumentSummarySchema,
   ResearchQuery,
+  Usage,
 } from "../types";
 import { zodResponseFormat } from "openai/helpers/zod";
+import { usageTracker } from "../utils";
 
 export class SummarizationModule {
   constructor(private openai: OpenAI) {}
@@ -47,13 +49,17 @@ export class SummarizationModule {
       ),
     });
 
-    console.log(
-      `Spent ${JSON.stringify(
-        response.usage,
-        null,
-        2
-      )} tokens on 4o-mini for summarization`
-    );
+    usageTracker.trackUsage({
+      model: "gpt-4o-mini",
+      tokens: {
+        prompt_tokens: response.usage?.prompt_tokens || 0,
+        completion_tokens: response.usage?.completion_tokens || 0,
+        total_tokens: response.usage?.total_tokens || 0,
+      },
+      module: "summarization",
+      operation: "summarizeContent",
+      timestamp: new Date(),
+    });
 
     const parsed = response.choices[0].message.parsed;
     if (!parsed) {
