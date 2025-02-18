@@ -1,6 +1,5 @@
 import { OpenAI } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
-import { Usage } from "../types";
 
 import {
   DocumentSummary,
@@ -215,9 +214,11 @@ export class BrainModule {
       query,
       outline,
       content: {
+        overview: "", // Will be generated in finalize step
         introduction,
         sections,
         conclusion,
+        references: "", // Will be generated in finalize step
       },
       metadata: {
         generatedAt: new Date(),

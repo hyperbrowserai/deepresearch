@@ -4,14 +4,21 @@ import { ClarificationModule } from "./modules/clarification";
 import { SearchModule } from "./modules/search";
 import { SummarizationModule } from "./modules/summarization";
 import { BrainModule } from "./modules/brain";
+import { FinalizeModule } from "./modules/finalize";
 import { ResearchQuery, ResearchReport, ResearchState } from "./types";
 import { usageTracker } from "./utils";
+
+export interface ResearchResult {
+  markdown: string;
+  report: ResearchReport;
+}
 
 export class ResearchOrchestrator {
   private clarificationModule: ClarificationModule;
   private searchModule: SearchModule;
   private summarizationModule: SummarizationModule;
   private brainModule: BrainModule;
+  private finalizeModule: FinalizeModule;
   private state: ResearchState | null = null;
 
   constructor(
@@ -22,6 +29,7 @@ export class ResearchOrchestrator {
     this.searchModule = new SearchModule(hbClient, openai);
     this.summarizationModule = new SummarizationModule(openai);
     this.brainModule = new BrainModule(openai);
+    this.finalizeModule = new FinalizeModule(openai);
   }
 
   private saveState(newState: Partial<ResearchState>) {
@@ -43,7 +51,7 @@ export class ResearchOrchestrator {
     }
   }
 
-  async conductResearch(initialTopic: string): Promise<ResearchReport> {
+  async conductResearch(initialTopic: string): Promise<ResearchResult> {
     try {
       // Reset usage tracking for new research
       usageTracker.reset();
@@ -69,7 +77,6 @@ export class ResearchOrchestrator {
       this.createCheckpoint();
 
       console.log(`Done with Clarification stage`);
-      console.log(JSON.stringify(this.state, null, 2));
 
       // 2. Search stage
       console.log("Starting search stage...");
@@ -77,7 +84,6 @@ export class ResearchOrchestrator {
       this.saveState({ stage: "summarization" });
 
       console.log(`Done with Search stage`);
-      console.log(JSON.stringify(this.state, null, 2));
 
       // 3. Summarization stage
       console.log("Starting summarization stage...");
@@ -88,9 +94,6 @@ export class ResearchOrchestrator {
       this.saveState({ documentSummaries, stage: "outline" });
 
       console.log(`Done with Summarization stage`);
-      console.log(JSON.stringify(this.state, null, 2));
-
-      console.log(JSON.stringify(documentSummaries, null, 2));
 
       // If we don't have enough relevant documents, backtrack to search
       if (documentSummaries.length < 3) {
@@ -110,10 +113,12 @@ export class ResearchOrchestrator {
       const metrics = usageTracker.getMetrics();
       report.metadata.usageMetrics = metrics;
 
-      console.log(JSON.stringify(metrics, null, 2));
+      // 5. Finalize and format report
+      console.log("Finalizing report format...");
+      const finalResult = await this.finalizeModule.finalizeReport(report);
 
       this.saveState({ stage: "final" });
-      return report;
+      return finalResult;
     } catch (error) {
       console.error("Error during research process:", error);
       if (this.state?.checkpoint) {

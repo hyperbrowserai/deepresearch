@@ -2,6 +2,8 @@ import { config } from "dotenv";
 import { openai, hbClient } from "./client";
 import { ResearchOrchestrator } from "./orchestrator";
 import { closeReadline } from "./utils";
+import { writeFileSync, mkdirSync, existsSync } from "fs";
+import { join } from "path";
 
 config();
 
@@ -15,32 +17,26 @@ async function main() {
       "The impact of artificial intelligence on healthcare in 2024";
     console.log(`Starting deep research on topic: ${topic}`);
 
-    const report = await orchestrator.conductResearch(topic);
+    const { markdown, report } = await orchestrator.conductResearch(topic);
 
-    // Output the report
-    console.log("\n=== Research Report ===\n");
-    console.log("Topic:", report.query.topic);
-    console.log("Angle:", report.query.angle || "General overview");
-    console.log("\nIntroduction:");
-    console.log(report.content.introduction);
-
-    console.log("\nMain Sections:");
-    for (const section of report.content.sections) {
-      console.log(`\n## ${section.heading}`);
-      console.log(section.content);
-      console.log("\nSources:", section.sources.join(", "));
+    // Create reports directory if it doesn't exist
+    const reportsDir = join(process.cwd(), "reports");
+    if (!existsSync(reportsDir)) {
+      mkdirSync(reportsDir);
     }
 
-    console.log("\nConclusion:");
-    console.log(report.content.conclusion);
+    // Save markdown to file
+    const timestamp = report.metadata.generatedAt.toISOString().split("T")[0];
+    const filename = `${report.query.topic
+      .slice(0, 50)
+      .replace(/[^a-zA-Z0-9]/g, "-")}-${timestamp}.md`;
 
-    console.log("\nMetadata:");
-    console.log("Generated at:", report.metadata.generatedAt);
-    console.log("Number of sources used:", report.metadata.sourcesUsed.length);
-    console.log(
-      "Usage Metrics:",
-      JSON.stringify(report.metadata.usageMetrics, null, 2)
-    );
+    writeFileSync(join(reportsDir, filename), markdown);
+    console.log(`\nReport saved to: reports/${filename}`);
+
+    // Output the report to console (simplified version)
+    console.log("\n=== Research Report ===\n");
+    console.log(markdown);
   } catch (error) {
     console.error("Error in research process:", error);
     process.exit(1);

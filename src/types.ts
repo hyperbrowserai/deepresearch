@@ -71,6 +71,7 @@ export interface ResearchReport {
   query: ResearchQuery;
   outline: ResearchOutline;
   content: {
+    overview: string;
     introduction: string;
     sections: Array<{
       heading: string;
@@ -78,6 +79,7 @@ export interface ResearchReport {
       sources: string[];
     }>;
     conclusion: string;
+    references: string;
   };
   metadata: {
     generatedAt: Date;
