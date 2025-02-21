@@ -52,7 +52,7 @@ export class ResearchOrchestrator {
   }
 
   // Get clarifying questions for a topic
-  async getClarifyingQuestions(topic: string): Promise<string[]> {
+  async getClarifyingQuestions(topic: string): Promise<string> {
     return this.clarificationModule.getClarifyingQuestions(topic);
   }
 

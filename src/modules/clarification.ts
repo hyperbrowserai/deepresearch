@@ -10,7 +10,7 @@ import { askQuestion, usageTracker } from "../utils";
 export class ClarificationModule {
   constructor(private openai: OpenAI) {}
 
-  async getClarifyingQuestions(topic: string): Promise<string[]> {
+  async getClarifyingQuestions(topic: string): Promise<string> {
     const response = await this.openai.beta.chat.completions.parse({
       model: "gpt-4o",
       messages: [
@@ -46,7 +46,13 @@ export class ClarificationModule {
     if (!questions) {
       throw new Error("No questions generated");
     }
-    return questions;
+
+    const prompt = `
+    Got it. To help me better understand your research needs, could you please answer these clarifying questions:
+    ${questions.map((q) => ` - ${q}`).join("\n")}
+    `.trim();
+
+    return prompt;
   }
 
   async processAnswer(

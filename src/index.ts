@@ -20,17 +20,12 @@ async function main() {
     // Get clarifying questions
     const questions = await orchestrator.getClarifyingQuestions(topic);
 
-    const prompt = `
-    Got it. To help me better understand your research needs, could you please answer these clarifying questions:
-    ${questions.map((q) => ` - ${q}`).join("\n")}
-    `.trim();
-
-    const answer = await askQuestion(prompt);
+    const answer = await askQuestion(questions);
 
     // Process answers to get refined query
     const refinedQuery = await orchestrator.processAnswer(
       topic,
-      prompt,
+      questions,
       answer
     );
 
