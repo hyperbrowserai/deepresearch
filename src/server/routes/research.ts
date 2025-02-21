@@ -1,7 +1,6 @@
 import express, { Router, RequestHandler } from "express";
 import { ResearchOrchestrator } from "../../orchestrator";
 import { openai, hbClient } from "../../client";
-import { ResearchQuerySchema } from "../../types";
 import { z } from "zod";
 
 const router: Router = express.Router();
