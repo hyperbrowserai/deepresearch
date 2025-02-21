@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 import { openai, hbClient } from "./client";
 import { ResearchOrchestrator } from "./orchestrator";
-import { closeReadline } from "./utils";
+import { closeReadline, askQuestion } from "./utils";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 
@@ -11,13 +11,33 @@ async function main() {
   try {
     const orchestrator = new ResearchOrchestrator(openai, hbClient);
 
-    // Example usage
+    // Get initial topic
     const topic =
       process.argv[2] ||
       "The impact of artificial intelligence on healthcare in 2024";
     console.log(`Starting deep research on topic: ${topic}`);
 
-    const { markdown, report } = await orchestrator.conductResearch(topic);
+    // Get clarifying questions
+    const questions = await orchestrator.getClarifyingQuestions(topic);
+
+    const prompt = `
+    Got it. To help me better understand your research needs, could you please answer these clarifying questions:
+    ${questions.map((q) => ` - ${q}`).join("\n")}
+    `.trim();
+
+    const answer = await askQuestion(prompt);
+
+    // Process answers to get refined query
+    const refinedQuery = await orchestrator.processAnswer(
+      topic,
+      prompt,
+      answer
+    );
+
+    // Conduct research with refined query
+    const { markdown, report } = await orchestrator.conductResearch(
+      refinedQuery
+    );
 
     // Create reports directory if it doesn't exist
     const reportsDir = join(process.cwd(), "reports");

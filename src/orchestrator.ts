@@ -5,7 +5,7 @@ import { SearchModule } from "./modules/search";
 import { SummarizationModule } from "./modules/summarization";
 import { BrainModule } from "./modules/brain";
 import { FinalizeModule } from "./modules/finalize";
-import { ResearchReport, ResearchState } from "./types";
+import { ResearchReport, ResearchState, ResearchQuery } from "./types";
 import { usageTracker } from "./utils";
 
 export interface ResearchResult {
@@ -51,32 +51,34 @@ export class ResearchOrchestrator {
     }
   }
 
-  async conductResearch(initialTopic: string): Promise<ResearchResult> {
+  // Get clarifying questions for a topic
+  async getClarifyingQuestions(topic: string): Promise<string[]> {
+    return this.clarificationModule.getClarifyingQuestions(topic);
+  }
+
+  // Process answers and generate refined query
+  async processAnswer(
+    topic: string,
+    question: string,
+    answers: string
+  ): Promise<ResearchQuery> {
+    return this.clarificationModule.processAnswer(topic, question, answers);
+  }
+
+  // Conduct research with a refined query
+  async conductResearch(refinedQuery: ResearchQuery): Promise<ResearchResult> {
     try {
       // Reset usage tracking for new research
       usageTracker.reset();
 
       // Initialize state with required fields
       this.state = {
-        query: {
-          topic: initialTopic,
-          depth: "deep", // Set default depth
-        },
-        stage: "clarification",
+        query: refinedQuery,
+        stage: "search",
         documentSummaries: [],
         searchQueries: [],
         partialDrafts: new Map(),
       } as ResearchState;
-
-      // 1. Clarification stage
-      console.log("Starting clarification stage...");
-      const refinedQuery = await this.clarificationModule.clarifyQuery(
-        initialTopic
-      );
-      this.saveState({ query: refinedQuery, stage: "search" });
-      this.createCheckpoint();
-
-      console.log(`Done with Clarification stage`);
 
       // 2. Search stage
       console.log("Starting search stage...");
@@ -95,11 +97,9 @@ export class ResearchOrchestrator {
 
       console.log(`Done with Summarization stage`);
 
-      // If we don't have enough relevant documents, backtrack to search
+      // If we don't have enough relevant documents, throw error
       if (documentSummaries.length < 3) {
-        console.log("Insufficient relevant documents found, backtracking...");
-        this.restoreCheckpoint();
-        return this.conductResearch(initialTopic); // Retry with the original topic
+        throw new Error("Insufficient relevant documents found");
       }
 
       // 4. Generate report
@@ -121,11 +121,6 @@ export class ResearchOrchestrator {
       return finalResult;
     } catch (error) {
       console.error("Error during research process:", error);
-      if (this.state?.checkpoint) {
-        console.log("Attempting to recover from checkpoint...");
-        this.restoreCheckpoint();
-        return this.conductResearch(initialTopic);
-      }
       throw error;
     }
   }

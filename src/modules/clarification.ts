@@ -10,7 +10,7 @@ import { askQuestion, usageTracker } from "../utils";
 export class ClarificationModule {
   constructor(private openai: OpenAI) {}
 
-  private async getClarifyingQuestions(topic: string): Promise<string[]> {
+  async getClarifyingQuestions(topic: string): Promise<string[]> {
     const response = await this.openai.beta.chat.completions.parse({
       model: "gpt-4o",
       messages: [
@@ -49,7 +49,7 @@ export class ClarificationModule {
     return questions;
   }
 
-  private async processAnswer(
+  async processAnswer(
     topic: string,
     question: string,
     answer: string
@@ -84,31 +84,29 @@ export class ClarificationModule {
 
     const parsed = response.choices[0].message.parsed;
     if (!parsed) {
-      throw new Error(
-        "No parsed response in `ClarificationModule.processAnswer`"
-      );
+      throw new Error("Failed to process answers");
     }
     return parsed;
   }
 
-  async clarifyQuery(initialTopic: string): Promise<ResearchQuery> {
-    let query: Partial<ResearchQuery> = {
-      topic: initialTopic,
-    };
+  // async clarifyQuery(initialTopic: string): Promise<ResearchQuery> {
+  //   let query: Partial<ResearchQuery> = {
+  //     topic: initialTopic,
+  //   };
 
-    // Get clarifying questions
-    const questions = await this.getClarifyingQuestions(initialTopic);
+  //   // Get clarifying questions
+  //   const questions = await this.getClarifyingQuestions(initialTopic);
 
-    const prompt = `
-    Got it. To help me better understand your research needs, could you please answer these clarifying questions:
-    ${questions.map((q) => ` - ${q}`).join("\n")}
-    `.trim();
-    const answer = await askQuestion(prompt);
+  //   const prompt = `
+  //   Got it. To help me better understand your research needs, could you please answer these clarifying questions:
+  //   ${questions.map((q) => ` - ${q}`).join("\n")}
+  //   `.trim();
+  //   const answer = await askQuestion(prompt);
 
-    const refinements = await this.processAnswer(initialTopic, prompt, answer);
-    query = { ...query, ...refinements };
+  //   const refinements = await this.processAnswer(initialTopic, [answer]);
+  //   query = { ...query, ...refinements };
 
-    // Ensure the query matches our schema
-    return ResearchQuerySchema.parse(query);
-  }
+  //   // Ensure the query matches our schema
+  //   return ResearchQuerySchema.parse(query);
+  // }
 }

@@ -1,25 +1,73 @@
-import express from "express";
+import express, { Router, RequestHandler } from "express";
 import { ResearchOrchestrator } from "../../orchestrator";
 import { openai, hbClient } from "../../client";
 import { ResearchQuerySchema } from "../../types";
 import { z } from "zod";
 
-const router = express.Router();
+const router: Router = express.Router();
 
 // Initialize the orchestrator
 const orchestrator = new ResearchOrchestrator(openai, hbClient);
 
-router.post("/", async (req: express.Request, res: express.Response) => {
+// Step 1: Get clarifying questions for a topic
+const getClarifyingQuestions: RequestHandler = async (req, res) => {
   try {
-    // Validate input using our existing schema
-    const validatedInput = ResearchQuerySchema.parse(req.body);
+    const { topic } = req.body;
+    if (!topic) {
+      res.status(400).json({
+        success: false,
+        error: "Topic is required",
+      });
+      return;
+    }
 
-    // Conduct research
-    const { markdown, report } = await orchestrator.conductResearch(
-      validatedInput.topic
+    const questions = await orchestrator.getClarifyingQuestions(topic);
+
+    res.json({
+      success: true,
+      data: {
+        topic,
+        questions,
+      },
+    });
+  } catch (error: unknown) {
+    console.error("Error getting questions:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to get clarifying questions",
+      message:
+        process.env.NODE_ENV === "development" && error instanceof Error
+          ? error.message
+          : "Internal server error",
+    });
+  }
+};
+
+// Step 2: Process answer and conduct research
+const processAnswerAndResearch: RequestHandler = async (req, res) => {
+  try {
+    const { topic, question, answer } = req.body;
+
+    if (!topic || !question || !answer) {
+      res.status(400).json({
+        success: false,
+        error: "Topic, question, and answer are all required",
+      });
+      return;
+    }
+
+    // Process answer to get refined query
+    const refinedQuery = await orchestrator.processAnswer(
+      topic,
+      question,
+      answer
     );
 
-    // Return both markdown and structured report
+    // Conduct research with refined query
+    const { markdown, report } = await orchestrator.conductResearch(
+      refinedQuery
+    );
+
     res.json({
       success: true,
       data: {
@@ -54,6 +102,9 @@ router.post("/", async (req: express.Request, res: express.Response) => {
       });
     }
   }
-});
+};
+
+router.post("/questions", getClarifyingQuestions);
+router.post("/process", processAnswerAndResearch);
 
 export default router;
