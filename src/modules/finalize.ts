@@ -127,9 +127,11 @@ export class FinalizeModule {
       // Format the reference in a more academic style
       let reference = `${source.title}`;
       if (source.sourceType === "academic") {
-        reference += `. Retrieved from ${source.url}`;
+        reference += `. ${new URL(source.url).hostname}. Retrieved from ${
+          source.url
+        }`;
       } else {
-        reference += `. ${new URL(source.url).hostname}`;
+        reference += `. ${new URL(source.url).hostname}. ${source.url}`;
       }
 
       referencesByType[source.sourceType].push(reference);

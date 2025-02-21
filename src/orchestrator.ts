@@ -5,7 +5,7 @@ import { SearchModule } from "./modules/search";
 import { SummarizationModule } from "./modules/summarization";
 import { BrainModule } from "./modules/brain";
 import { FinalizeModule } from "./modules/finalize";
-import { ResearchQuery, ResearchReport, ResearchState } from "./types";
+import { ResearchReport, ResearchState } from "./types";
 import { usageTracker } from "./utils";
 
 export interface ResearchResult {

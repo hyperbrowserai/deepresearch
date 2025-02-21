@@ -73,7 +73,9 @@ export class BrainModule {
           role: "system",
           content: `You are a research expert writing a section of a comprehensive research report.
           Use the provided document summaries to write a detailed, well-structured section.
-          Focus on accuracy, clarity, and logical flow. Include relevant citations.`,
+          Include inline citations in APA style using the source URL's domain name in parentheses.
+          For example: "According to recent studies (example.com), AI has significant impact..."
+          Focus on accuracy, clarity, and logical flow.`,
         },
         {
           role: "user",
@@ -81,7 +83,7 @@ export class BrainModule {
           Research Query: ${JSON.stringify(query, null, 2)}
           Relevant Documents: ${JSON.stringify(relevantDocs, null, 2)}
           
-          Write a comprehensive section for the research report. No preamble or postamble, just the section content.`,
+          Write a comprehensive section with inline citations. Use the source's domain name in parentheses for citations.`,
         },
       ],
     });
